@@ -31,22 +31,17 @@ public class SampleFileGenerator {
     public void generateInputFiles() {
         Scenario scenario = Scenario.createSunnyDayProfile();
 
-        // 1. Build Excel-friendly CSV format
+        // 1. Build Excel-friendly CSV format matching simulation inputs
         StringBuilder csv = new StringBuilder();
-        csv.append("Hour,SolarGen_kW,TotalDemand_kW,CriticalDemand_kW,GridAvailable,BatteryTechnology,BatteryCapacity_kWh,InitialSOC_pct,Strategy,PeakTarget_kW\n");
+        csv.append("Hour,SolarGen_kW,TotalDemand_kW,CriticalDemand_kW,GridAvailable\n");
 
         for (ScenarioStep step : scenario.getSteps()) {
-            csv.append(String.format("%d,%.1f,%.1f,%.1f,%s,%s,%.1f,%.1f,%s,%.1f\n",
+            csv.append(String.format("%d,%.2f,%.2f,%.2f,%s\n",
                     step.hour(),
                     step.solarGenerationKw(),
                     step.totalDemandKw(),
                     step.criticalDemandKw(),
-                    step.gridAvailable(),
-                    "LITHIUM_ION",
-                    100.0,
-                    50.0,
-                    "SELF_CONSUMPTION",
-                    25.0));
+                    step.gridAvailable()));
         }
 
         String inputCsvContent = csv.toString();
@@ -99,11 +94,10 @@ public class SampleFileGenerator {
     public String getInputCsvContent() {
         Scenario scenario = Scenario.createSunnyDayProfile();
         StringBuilder csv = new StringBuilder();
-        csv.append("Hour,SolarGen_kW,TotalDemand_kW,CriticalDemand_kW,GridAvailable,BatteryTechnology,BatteryCapacity_kWh,InitialSOC_pct,Strategy,PeakTarget_kW\n");
+        csv.append("Hour,SolarGen_kW,TotalDemand_kW,CriticalDemand_kW,GridAvailable\n");
         for (ScenarioStep step : scenario.getSteps()) {
-            csv.append(String.format("%d,%.1f,%.1f,%.1f,%s,%s,%.1f,%.1f,%s,%.1f\n",
-                    step.hour(), step.solarGenerationKw(), step.totalDemandKw(), step.criticalDemandKw(), step.gridAvailable(),
-                    "LITHIUM_ION", 100.0, 50.0, "SELF_CONSUMPTION", 25.0));
+            csv.append(String.format("%d,%.2f,%.2f,%.2f,%s\n",
+                    step.hour(), step.solarGenerationKw(), step.totalDemandKw(), step.criticalDemandKw(), step.gridAvailable()));
         }
         return csv.toString();
     }
