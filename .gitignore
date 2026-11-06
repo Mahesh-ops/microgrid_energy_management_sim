@@ -30,3 +30,9 @@ HELP.md
 # Diagram generator scripts and generated diagrams directory (Do not commit per instructions)
 diagrams/
 generate_diagrams.py
+
+# Raw .ip1 and .op1 files (Retain only clean CSV files on GitHub)
+*.ip1
+*.op1
+*.ip1.csv
+*.op1.csv
