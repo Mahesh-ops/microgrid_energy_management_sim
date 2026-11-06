@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microgrid Energy Management Simulator</title>
+    <!-- Chart.js CDN for interactive charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --accent-solar: #fbbf24;
+            --accent-battery: #34d399;
+            --accent-grid: #60a5fa;
+            --accent-load: #f87171;
+            --accent-island: #f97316;
+            --primary-btn: #3b82f6;
+            --primary-btn-hover: #2563eb;
+            --danger-btn: #ef4444;
+            --danger-btn-hover: #dc2626;
+            --success-btn: #10b981;
+            --success-btn-hover: #059669;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-title p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+        }
+
+        .mode-badge {
+            padding: 0.4rem 1rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .badge-grid-connected {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid #10b981;
+        }
+
+        .badge-islanded {
+            background-color: rgba(249, 115, 22, 0.2);
+            color: #fb923c;
+            border: 1px solid #f97316;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 1.5rem;
+            padding: 1.5rem 2rem;
+            flex: 1;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            height: fit-content;
+        }
+
+        .sidebar h2 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.2rem;
+            color: #e2e8f0;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .form-group input, .form-group select {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--primary-btn);
+        }
+
+        .range-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .range-wrapper input[type="range"] {
+            flex: 1;
+            accent-color: var(--primary-btn);
+        }
+
+        .range-val {
+            min-width: 50px;
+            text-align: right;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #38bdf8;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn {
+            border: none;
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            text-align: center;
+        }
+
+        .btn-primary { background-color: var(--primary-btn); color: #fff; }
+        .btn-primary:hover { background-color: var(--primary-btn-hover); }
+
+        .btn-success { background-color: var(--success-btn); color: #fff; }
+        .btn-success:hover { background-color: var(--success-btn-hover); }
+
+        .btn-danger { background-color: var(--danger-btn); color: #fff; }
+        .btn-danger:hover { background-color: var(--danger-btn-hover); }
+
+        .btn-secondary { background-color: #475569; color: #fff; }
+        .btn-secondary:hover { background-color: #64748b; }
+
+        .btn-full { grid-column: span 2; }
+
+        /* Main Content Styles */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .kpi-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .kpi-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .kpi-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .kpi-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background-color: var(--bg-input);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.3rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--accent-battery);
+            transition: width 0.3s ease;
+        }
+
+        /* Chart Area */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .chart-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            min-height: 280px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chart-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .chart-container {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            min-height: 220px;
+        }
+
+        /* Decision Log and Table */
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 1.5rem;
+        }
+
+        .log-card, .history-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            max-height: 320px;
+        }
+
+        .log-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .log-box {
+            background-color: #090d16;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.75rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #a7f3d0;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 0.4rem;
+        }
+
+        .log-entry {
+            line-height: 1.4;
+            border-bottom: 1px dashed #1e293b;
+            padding-bottom: 0.2rem;
+        }
+
+        .log-entry.warn { color: #fde047; }
+        .log-entry.error { color: #f87171; }
+        .log-entry.info { color: #67e8f9; }
+
+        .table-wrapper {
+            overflow-x: auto;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            text-align: right;
+        }
+
+        th, td {
+            padding: 0.4rem 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: #090d16;
+            color: var(--text-muted);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover { background-color: rgba(255, 255, 255, 0.03); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">
+            <h1>⚡ Microgrid Energy Management Simulator</h1>
+            <p>SS G514 OOAD Project — Area 20: Electrical Science (Single-Controllable Microgrid Implementation)</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div id="simClockBadge" class="mode-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #0284c7;">
+                ⏱️ Elapsed: 0.0h (0m)
+            </div>
+            <div id="gridStateBadge" class="mode-badge badge-grid-connected">
+                ● Grid-Connected
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Sidebar Controls -->
+        <aside class="sidebar">
+            <h2>Microgrid Inputs</h2>
+            <div class="form-group">
+                <label>Solar Generation (kW) <span id="lblSolar">45 kW</span></label>
+                <div class="range-wrapper">
+                    <input type="range" id="inputSolar" min="0" max="100" step="0.1" value="45" oninput="updateConfig()">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Total Demand (kW) <span id="lblLoad">60 kW</span></label>
+                <div class="range-wrapper">
+                    <input type="range" id="inputLoad" min="0" max="100" step="0.1" value="60" oninput="updateConfig()">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Critical Demand (kW) <span id="lblCritical">20 kW</span></label>
+                <div class="range-wrapper">
+                    <input type="range" id="inputCritical" min="0" max="60" step="0.1" value="20" oninput="updateConfig()">
+                </div>
+            </div>
+
+            <h2>Energy Storage Bank</h2>
+            <div class="form-group">
+                <label>Battery Chemistry</label>
+                <select id="selectBatteryType" onchange="updateConfig()">
+                    <option value="LITHIUM_ION">Lithium-Ion (LiFePO4) [15%-95%]</option>
+                    <option value="LEAD_ACID">Lead-Acid (VRLA) [40%-95%]</option>
+                    <option value="SODIUM_NICKEL">Sodium-Nickel (ZEBRA) [20%-90%]</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Battery Capacity (kWh) <span id="lblCapacity">100 kWh</span></label>
+                <div class="range-wrapper">
+                    <input type="range" id="inputCapacity" min="20" max="200" step="1" value="100" oninput="updateConfig()">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Current SOC (%) <span id="lblSoc">50%</span></label>
+                <div class="range-wrapper">
+                    <input type="range" id="inputSoc" min="0" max="100" step="0.1" value="50" oninput="updateConfig()">
+                </div>
+            </div>
+
+            <h2>Grid & Strategy Control</h2>
+            <div class="form-group">
+                <label>Supervisory Strategy</label>
+                <select id="selectStrategy" onchange="togglePeakShaving(); updateConfig();">
+                    <option value="SELF_CONSUMPTION">Self-Consumption</option>
+                    <option value="PEAK_SHAVING">Peak Shaving</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="groupPeakTarget" style="display: none;">
+                <label>Peak Shaving Grid Limit (kW) <span id="lblPeak">25 kW</span></label>
+                <div class="range-wrapper">
+                    <input type="range" id="inputPeakTarget" min="5" max="60" value="25" oninput="updateConfig()">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Predefined Scenarios</label>
+                <select id="selectScenario">
+                    <option value="sunny_day_24h">24-Hour Diurnal Solar & Load Cycle</option>
+                    <option value="grid_outage_resilience">Grid Outage & Resilience Scenario</option>
+                </select>
+            </div>
+
+            <h2>⏱️ Step Duration (Time Step Δt)</h2>
+            <div class="form-group">
+                <label>Step Duration (User Selectable)</label>
+                <select id="selectStepDuration" onchange="onStepDurationChange()">
+                    <option value="1.0" selected>1 Hour (60 mins) — Default</option>
+                    <option value="0.75">45 Minutes (0.75 h)</option>
+                    <option value="0.5">30 Minutes (Half Hour)</option>
+                    <option value="0.25">15 Minutes (Quarter Hour)</option>
+                    <option value="0.1667">10 Minutes (0.17 h)</option>
+                    <option value="0.0833">5 Minutes (0.08 h)</option>
+                    <option value="custom">Custom Duration (Minutes)...</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="groupCustomDuration" style="display: none;">
+                <label>Custom Duration: <span id="lblCustomDuration" style="color:#38bdf8; font-weight:600;">30 mins (0.50 h)</span></label>
+                <div class="range-wrapper">
+                    <input type="range" id="inputCustomDuration" min="1" max="180" step="1" value="30" oninput="onCustomDurationSlider()">
+                    <span class="range-val" id="valCustomMinutes">30m</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Auto-Advance Pace</label>
+                <select id="selectAutoInterval" onchange="onAutoIntervalChange()">
+                    <option value="1000">1 Step every 1.0 s</option>
+                    <option value="1500" selected>1 Step every 1.5 s</option>
+                    <option value="2000">1 Step every 2.0 s</option>
+                    <option value="3000">1 Step every 3.0 s</option>
+                    <option value="500">Fast (1 Step every 0.5 s)</option>
+                </select>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" id="btnSingleStep" onclick="runSingleStep()">▶ Run 1 Step (1h)</button>
+                <button class="btn btn-primary" id="btnBatchSteps" onclick="runBatchSteps(10)">⏩ Run 10 Steps (10h)</button>
+                <button class="btn btn-secondary btn-full" id="btnAutoPlay" onclick="toggleAutoAdvance()">⏱️ Start Auto-Advance (Live Progression)</button>
+                <button class="btn btn-secondary btn-full" onclick="runScenario()">📊 Run Full Scenario</button>
+                <button class="btn btn-danger" onclick="triggerGridFailure()">⚡ Simulate Outage</button>
+                <button class="btn btn-success" onclick="triggerGridRestore()">🔌 Restore Grid</button>
+                <button class="btn btn-secondary btn-full" onclick="resetSimulation()">🔄 Reset Simulation</button>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard View -->
+        <main class="main-content">
+            <!-- KPI Summary Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-title">☀️ Solar Generation</div>
+                    <div class="kpi-value" id="kpiSolar">0.0 kW</div>
+                    <div class="kpi-sub" id="kpiSolarSub">Capacity: 100 kW</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">⚡ Demand Load</div>
+                    <div class="kpi-value" id="kpiLoad">0.0 kW</div>
+                    <div class="kpi-sub" id="kpiCritical">Critical: 0.0 kW</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">
+                        <span>🔋 Battery SOC</span>
+                        <span id="kpiBatteryType" style="color:#38bdf8;">Li-Ion</span>
+                    </div>
+                    <div class="kpi-value" id="kpiSoc">0.0 %</div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="socProgressBar" style="width: 50%;"></div>
+                    </div>
+                    <div class="kpi-sub" id="kpiBatteryFlow">Idle</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">🔌 Utility Grid Exchange</div>
+                    <div class="kpi-value" id="kpiGrid">0.0 kW</div>
+                    <div class="kpi-sub" id="kpiGridMode">Status: Connected</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">⚠️ Unmet Load</div>
+                    <div class="kpi-value" id="kpiUnmet" style="color: #4ade80;">0.0 kW</div>
+                    <div class="kpi-sub" id="kpiUnmetCrit">Critical Unmet: 0.0 kW</div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">Power Dispatch Allocation (kW)</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chartDispatch"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">Battery State of Charge (%) Trend</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chartSoc"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom: Log and Table -->
+            <div class="bottom-grid">
+                <div class="log-card">
+                    <div class="log-title">
+                        <span>📋 Controller Decision & Event Log</span>
+                        <span style="font-size:0.75rem; color:var(--text-muted);" id="stepCounter">Step: 0</span>
+                    </div>
+                    <div class="log-box" id="logBox">
+                        <div class="log-entry info">System initialized in Grid-Connected mode with Self-Consumption strategy.</div>
+                    </div>
+                </div>
+
+                <div class="history-card">
+                    <div class="log-title">
+                        <span>📊 Recent Step Telemetry</span>
+                        <div style="display:flex; gap:0.4rem;">
+                            <button class="btn btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;" onclick="exportInputCsv()">📥 Input CSV</button>
+                            <button class="btn btn-success" style="padding:0.25rem 0.6rem; font-size:0.75rem;" onclick="exportCsv()">📥 Output CSV</button>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Δt</th>
+                                    <th>State</th>
+                                    <th>Solar</th>
+                                    <th>Load</th>
+                                    <th>Bat (D/C)</th>
+                                    <th>Grid</th>
+                                    <th>SOC</th>
+                                    <th>Unmet</th>
+                                </tr>
+                            </thead>
+                            <tbody id="telemetryTableBody">
+                                <tr><td colspan="9" style="text-align:center; color:var(--text-muted);">No simulation steps executed yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let dispatchChart = null;
+        let socChart = null;
+        let autoAdvanceTimer = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            updateButtonLabels();
+            fetchState();
+        });
+
+        function togglePeakShaving() {
+            const strat = document.getElementById('selectStrategy').value;
+            document.getElementById('groupPeakTarget').style.display = (strat === 'PEAK_SHAVING') ? 'flex' : 'none';
+        }
+
+        function getStepHours() {
+            const select = document.getElementById('selectStepDuration');
+            if (select.value === 'custom') {
+                const mins = parseFloat(document.getElementById('inputCustomDuration').value);
+                return Math.max(0.01, mins / 60.0);
+            }
+            return parseFloat(select.value) || 1.0;
+        }
+
+        function formatDuration(h) {
+            if (!h || h <= 0) return "0m";
+            const mins = Math.round(h * 60);
+            if (mins < 60) return mins + "m";
+            const hours = Math.floor(mins / 60);
+            const rem = mins % 60;
+            return rem > 0 ? `${hours}h ${rem}m` : `${hours}h`;
+        }
+
+        function updateButtonLabels() {
+            const h = getStepHours();
+            const singleTxt = formatDuration(h);
+            const batchTxt = formatDuration(h * 10);
+            const singleBtn = document.getElementById('btnSingleStep');
+            const batchBtn = document.getElementById('btnBatchSteps');
+            if (singleBtn) singleBtn.innerText = `▶ Run 1 Step (${singleTxt})`;
+            if (batchBtn) batchBtn.innerText = `⏩ Run 10 Steps (${batchTxt})`;
+        }
+
+        function onStepDurationChange() {
+            const sel = document.getElementById('selectStepDuration');
+            const customGroup = document.getElementById('groupCustomDuration');
+            if (sel.value === 'custom') {
+                customGroup.style.display = 'block';
+                onCustomDurationSlider();
+            } else {
+                customGroup.style.display = 'none';
+                updateButtonLabels();
+            }
+        }
+
+        function onCustomDurationSlider() {
+            const mins = parseInt(document.getElementById('inputCustomDuration').value, 10);
+            const hours = (mins / 60.0).toFixed(2);
+            document.getElementById('valCustomMinutes').innerText = mins + "m";
+            document.getElementById('lblCustomDuration').innerText = `${mins} mins (${hours} h)`;
+            updateButtonLabels();
+        }
+
+        function onAutoIntervalChange() {
+            if (autoAdvanceTimer) {
+                toggleAutoAdvance(); // stop
+                toggleAutoAdvance(); // restart with new interval
+            }
+        }
+
+        function toggleAutoAdvance() {
+            const btn = document.getElementById('btnAutoPlay');
+            if (autoAdvanceTimer) {
+                clearInterval(autoAdvanceTimer);
+                autoAdvanceTimer = null;
+                btn.innerText = "⏱️ Start Auto-Advance (Live Progression)";
+                btn.className = "btn btn-secondary btn-full";
+            } else {
+                const interval = parseInt(document.getElementById('selectAutoInterval').value, 10) || 1500;
+                btn.innerText = "⏸️ Pause Auto-Advance";
+                btn.className = "btn btn-danger btn-full";
+                autoAdvanceTimer = setInterval(async () => {
+                    await runSingleStep();
+                }, interval);
+            }
+        }
+
+        function initCharts() {
+            const ctxDispatch = document.getElementById('chartDispatch').getContext('2d');
+            dispatchChart = new Chart(ctxDispatch, {
+                type: 'bar',
+                data: {
+                    labels: ['Solar -> Load', 'Solar -> Battery', 'Solar -> Grid', 'Battery Discharge', 'Grid Import', 'Curtailed'],
+                    datasets: [{
+                        label: 'Power Flow (kW)',
+                        data: [0, 0, 0, 0, 0, 0],
+                        backgroundColor: ['#fbbf24', '#34d399', '#60a5fa', '#f87171', '#38bdf8', '#64748b'],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+
+            const ctxSoc = document.getElementById('chartSoc').getContext('2d');
+            socChart = new Chart(ctxSoc, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'SOC (%)',
+                        data: [],
+                        borderColor: '#34d399',
+                        backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                        fill: true,
+                        tension: 0.2,
+                        pointRadius: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function fetchState() {
+            try {
+                const res = await fetch('/api/simulation/state');
+                const data = await res.json();
+                renderState(data);
+            } catch (err) {
+                console.error("Failed to fetch simulation state:", err);
+            }
+        }
+
+        function renderState(data) {
+            // Update clock badge
+            const clock = document.getElementById('simClockBadge');
+            if (clock && data.totalSimulatedHours !== undefined) {
+                clock.innerText = `⏱️ Elapsed: ${formatDuration(data.totalSimulatedHours)} (${data.totalSimulatedHours.toFixed(1)}h)`;
+            }
+
+            // Update mode badge
+            const badge = document.getElementById('gridStateBadge');
+            if (data.operatingState.includes("Islanded")) {
+                badge.className = "mode-badge badge-islanded";
+                badge.innerHTML = "⚡ Islanded (Autonomous)";
+            } else {
+                badge.className = "mode-badge badge-grid-connected";
+                badge.innerHTML = "● Grid-Connected";
+            }
+
+            // Sliders and labels
+            const inputSolar = document.getElementById('inputSolar');
+            if (inputSolar && document.activeElement !== inputSolar) {
+                inputSolar.value = data.solarGenerationKw;
+            }
+            document.getElementById('lblSolar').innerText = data.solarGenerationKw.toFixed(1) + " kW";
+
+            const inputLoad = document.getElementById('inputLoad');
+            if (inputLoad && document.activeElement !== inputLoad) {
+                inputLoad.value = data.totalDemandKw;
+            }
+            document.getElementById('lblLoad').innerText = data.totalDemandKw.toFixed(1) + " kW";
+
+            const inputCritical = document.getElementById('inputCritical');
+            if (inputCritical && document.activeElement !== inputCritical) {
+                inputCritical.value = data.criticalDemandKw;
+            }
+            document.getElementById('lblCritical').innerText = data.criticalDemandKw.toFixed(1) + " kW";
+
+            const inputCapacity = document.getElementById('inputCapacity');
+            if (inputCapacity && document.activeElement !== inputCapacity) {
+                inputCapacity.value = data.batteryCapacityKwh;
+            }
+            document.getElementById('lblCapacity').innerText = data.batteryCapacityKwh.toFixed(0) + " kWh";
+
+            const inputSoc = document.getElementById('inputSoc');
+            if (inputSoc && document.activeElement !== inputSoc) {
+                inputSoc.value = data.batterySocPercent;
+            }
+            document.getElementById('lblSoc').innerText = data.batterySocPercent.toFixed(1) + "%";
+
+            // Sync Dropdowns if changed remotely
+            if (data.batteryTechnology) {
+                const selBat = document.getElementById('selectBatteryType');
+                if (selBat && document.activeElement !== selBat) {
+                    if (data.batteryTechnology.includes("Lithium")) selBat.value = "LITHIUM_ION";
+                    else if (data.batteryTechnology.includes("Lead")) selBat.value = "LEAD_ACID";
+                    else if (data.batteryTechnology.includes("Sodium")) selBat.value = "SODIUM_NICKEL";
+                }
+            }
+            if (data.strategyType) {
+                const selStrat = document.getElementById('selectStrategy');
+                if (selStrat && document.activeElement !== selStrat) {
+                    selStrat.value = data.strategyType;
+                }
+            }
+
+            // KPIs
+            document.getElementById('kpiSolar').innerText = data.solarGenerationKw.toFixed(1) + " kW";
+            document.getElementById('kpiLoad').innerText = data.totalDemandKw.toFixed(1) + " kW";
+            document.getElementById('kpiCritical').innerText = "Critical: " + data.criticalDemandKw.toFixed(1) + " kW";
+
+            document.getElementById('kpiBatteryType').innerText = data.batteryTechnology.split(" ")[0];
+            document.getElementById('kpiSoc').innerText = data.batterySocPercent.toFixed(1) + "%";
+            document.getElementById('socProgressBar').style.width = Math.min(100, Math.max(0, data.batterySocPercent)) + "%";
+
+            if (data.latestResult) {
+                const r = data.latestResult;
+                if (r.batteryChargeKw > 0) {
+                    document.getElementById('kpiBatteryFlow').innerText = "Charging: +" + r.batteryChargeKw.toFixed(1) + " kW";
+                    document.getElementById('kpiBatteryFlow').style.color = "#34d399";
+                } else if (r.batteryDischargeKw > 0) {
+                    document.getElementById('kpiBatteryFlow').innerText = "Discharging: -" + r.batteryDischargeKw.toFixed(1) + " kW";
+                    document.getElementById('kpiBatteryFlow').style.color = "#f87171";
+                } else {
+                    document.getElementById('kpiBatteryFlow').innerText = "Idle";
+                    document.getElementById('kpiBatteryFlow').style.color = "var(--text-muted)";
+                }
+
+                if (r.gridImportKw > 0) {
+                    document.getElementById('kpiGrid').innerText = "Import: " + r.gridImportKw.toFixed(1) + " kW";
+                    document.getElementById('kpiGrid').style.color = "#60a5fa";
+                } else if (r.gridExportKw > 0) {
+                    document.getElementById('kpiGrid').innerText = "Export: " + r.gridExportKw.toFixed(1) + " kW";
+                    document.getElementById('kpiGrid').style.color = "#34d399";
+                } else {
+                    document.getElementById('kpiGrid').innerText = "0.0 kW";
+                    document.getElementById('kpiGrid').style.color = "#ffffff";
+                }
+
+                if (r.unmetLoadKw > 0) {
+                    document.getElementById('kpiUnmet').innerText = r.unmetLoadKw.toFixed(1) + " kW";
+                    document.getElementById('kpiUnmet').style.color = "#ef4444";
+                    document.getElementById('kpiUnmetCrit').innerText = "Critical Unmet: " + r.unmetCriticalLoadKw.toFixed(1) + " kW";
+                } else {
+                    document.getElementById('kpiUnmet').innerText = "0.0 kW";
+                    document.getElementById('kpiUnmet').style.color = "#4ade80";
+                    document.getElementById('kpiUnmetCrit').innerText = "All loads served";
+                }
+
+                // Update Bar Chart
+                dispatchChart.data.datasets[0].data = [
+                    r.solarToLoadKw,
+                    r.solarToBatteryKw,
+                    r.solarToGridKw,
+                    r.batteryDischargeKw,
+                    r.gridImportKw,
+                    r.curtailedSolarKw
+                ];
+                dispatchChart.update();
+            }
+
+            document.getElementById('stepCounter').innerText = "Step: " + data.stepIndex;
+
+            // Update SOC Trend Chart
+            if (data.history && data.history.length > 0) {
+                const labels = data.history.map(h => "S" + h.stepIndex);
+                const socValues = data.history.map(h => h.finalBatterySocPercent);
+                socChart.data.labels = labels;
+                socChart.data.datasets[0].data = socValues;
+                socChart.update();
+
+                // Telemetry Table
+                renderTable(data.history.slice(-10));
+            }
+
+            // Update Logs
+            if (data.latestResult && data.latestResult.events) {
+                appendLogs(data.latestResult.events, data.stepIndex, data.latestResult.stepHours);
+            }
+        }
+
+        function appendLogs(events, step, stepHours) {
+            const box = document.getElementById('logBox');
+            const dt = formatDuration(stepHours || getStepHours());
+            events.forEach(e => {
+                const div = document.createElement('div');
+                div.className = "log-entry " + (e.includes("SHORTAGE") || e.includes("VIOLATION") ? "error" : e.includes("CLAMP") ? "warn" : "info");
+                div.innerText = `[Step ${step} | +${dt}] ${e}`;
+                box.appendChild(div);
+            });
+        }
+
+        function renderTable(history) {
+            const tbody = document.getElementById('telemetryTableBody');
+            tbody.innerHTML = '';
+            history.forEach(h => {
+                const dt = formatDuration(h.stepHours || 1.0);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${h.stepIndex}</td>
+                    <td style="color:#38bdf8; font-weight:600;">+${dt}</td>
+                    <td><span style="color:${h.operatingState.includes('Islanded') ? '#f97316' : '#10b981'}">${h.operatingState.substring(0,6)}</span></td>
+                    <td>${h.solarGenerationKw.toFixed(1)}</td>
+                    <td>${h.totalDemandKw.toFixed(1)}</td>
+                    <td>${h.batteryDischargeKw > 0 ? '-' + h.batteryDischargeKw.toFixed(1) : '+' + h.batteryChargeKw.toFixed(1)}</td>
+                    <td>${h.gridImportKw > 0 ? '⬇' + h.gridImportKw.toFixed(1) : (h.gridExportKw > 0 ? '⬆' + h.gridExportKw.toFixed(1) : '0')}</td>
+                    <td>${h.finalBatterySocPercent.toFixed(1)}%</td>
+                    <td style="color:${h.unmetLoadKw > 0 ? '#ef4444' : '#4ade80'}">${h.unmetLoadKw.toFixed(1)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function updateConfig() {
+            const solar = parseFloat(document.getElementById('inputSolar').value);
+            const load = parseFloat(document.getElementById('inputLoad').value);
+            let critical = parseFloat(document.getElementById('inputCritical').value);
+            if (critical > load) {
+                critical = load;
+                document.getElementById('inputCritical').value = critical;
+            }
+            const type = document.getElementById('selectBatteryType').value;
+            const capacity = parseFloat(document.getElementById('inputCapacity').value);
+            const soc = parseFloat(document.getElementById('inputSoc').value);
+            const strategy = document.getElementById('selectStrategy').value;
+            const peakTarget = parseFloat(document.getElementById('inputPeakTarget').value);
+
+            // Immediate label feedback while dragging
+            document.getElementById('lblSolar').innerText = solar.toFixed(1) + " kW";
+            document.getElementById('lblLoad').innerText = load.toFixed(1) + " kW";
+            document.getElementById('lblCritical').innerText = critical.toFixed(1) + " kW";
+            document.getElementById('lblCapacity').innerText = capacity.toFixed(0) + " kWh";
+            document.getElementById('lblSoc').innerText = soc.toFixed(1) + "%";
+
+            const payload = {
+                solarGenerationKw: solar,
+                totalDemandKw: load,
+                criticalDemandKw: critical,
+                batteryType: type,
+                batteryCapacityKwh: capacity,
+                batterySocPercent: soc,
+                strategyType: strategy,
+                peakShavingTargetKw: peakTarget
+            };
+
+            const res = await fetch('/api/simulation/configure', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            renderState(data);
+        }
+
+        async function runSingleStep() {
+            const stepHours = getStepHours();
+            const res = await fetch('/api/simulation/step?stepHours=' + stepHours, { method: 'POST' });
+            const data = await res.json();
+            renderState(data);
+        }
+
+        async function runBatchSteps(count) {
+            const stepHours = getStepHours();
+            const res = await fetch(`/api/simulation/run-steps?count=${count}&stepHours=${stepHours}`, { method: 'POST' });
+            const data = await res.json();
+            renderState(data);
+        }
+
+        async function runScenario() {
+            const scenarioId = document.getElementById('selectScenario').value;
+            const res = await fetch('/api/simulation/run-scenario?scenarioId=' + scenarioId, { method: 'POST' });
+            const data = await res.json();
+            renderState(data);
+        }
+
+        async function triggerGridFailure() {
+            const res = await fetch('/api/simulation/grid-failure', { method: 'POST' });
+            const data = await res.json();
+            renderState(data);
+        }
+
+        async function triggerGridRestore() {
+            const res = await fetch('/api/simulation/grid-restore', { method: 'POST' });
+            const data = await res.json();
+            renderState(data);
+        }
+
+        async function resetSimulation() {
+            if (autoAdvanceTimer) {
+                clearInterval(autoAdvanceTimer);
+                autoAdvanceTimer = null;
+                const btn = document.getElementById('btnAutoPlay');
+                if (btn) {
+                    btn.innerText = "⏱️ Start Auto-Advance (Live Progression)";
+                    btn.className = "btn btn-secondary btn-full";
+                }
+            }
+            const res = await fetch('/api/simulation/reset?initialSoc=50.0', { method: 'POST' });
+            const data = await res.json();
+            document.getElementById('logBox').innerHTML = '<div class="log-entry info">Simulation reset to initial state.</div>';
+            renderState(data);
+        }
+
+        function exportInputCsv() {
+            window.location.href = '/api/simulation/export-input-csv';
+        }
+
+        function exportCsv() {
+            window.location.href = '/api/simulation/export-csv';
+        }
+    </script>
+</body>
+</html>
+

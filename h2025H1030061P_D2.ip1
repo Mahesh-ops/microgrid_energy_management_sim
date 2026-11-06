@@ -1,0 +1,42 @@
+# Microgrid Simulation Sample Input File (.ip1)
+# Candidate: Jalluri Mahesh Kumar | ID: 2025H1030061P
+# Course: SS G514 (Object Oriented Analysis & Design)
+# Area 20: Electrical Science - Single-Controllable Microgrid Implementation
+
+[MICROGRID_CONFIGURATION]
+solar_rated_capacity_kw = 100.0
+inverter_rated_power_kw = 60.0
+battery_technology = LITHIUM_ION
+battery_capacity_kwh = 100.0
+battery_initial_soc_percent = 50.0
+grid_feeder_import_limit_kw = 100.0
+grid_feeder_export_limit_kw = 50.0
+supervisory_strategy = SELF_CONSUMPTION
+peak_shaving_target_kw = 25.0
+
+[HOURLY_SIMULATION_PROFILE_24H]
+# Hour, SolarGen_kW, TotalLoad_kW, CriticalLoad_kW, GridAvailable
+Hour_01 = 0.0, 20.0, 7.0, true
+Hour_02 = 0.0, 18.0, 6.3, true
+Hour_03 = 0.0, 18.0, 6.3, true
+Hour_04 = 0.0, 19.0, 6.6, true
+Hour_05 = 0.0, 22.0, 7.7, true
+Hour_06 = 5.0, 28.0, 9.8, true
+Hour_07 = 18.0, 38.0, 13.3, true
+Hour_08 = 42.0, 45.0, 15.7, true
+Hour_09 = 68.0, 48.0, 16.8, true
+Hour_10 = 80.0, 50.0, 17.5, true
+Hour_11 = 85.0, 52.0, 18.2, true
+Hour_12 = 85.0, 50.0, 17.5, true
+Hour_13 = 82.0, 48.0, 16.8, true
+Hour_14 = 70.0, 46.0, 16.1, true
+Hour_15 = 50.0, 45.0, 15.7, true
+Hour_16 = 28.0, 52.0, 18.2, true
+Hour_17 = 10.0, 60.0, 21.0, true
+Hour_18 = 0.0, 72.0, 25.2, true
+Hour_19 = 0.0, 78.0, 27.3, true
+Hour_20 = 0.0, 75.0, 26.3, true
+Hour_21 = 0.0, 62.0, 21.7, true
+Hour_22 = 0.0, 45.0, 15.7, true
+Hour_23 = 0.0, 30.0, 10.5, true
+Hour_24 = 0.0, 24.0, 8.4, true

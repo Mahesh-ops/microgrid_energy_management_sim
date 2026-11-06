@@ -1,0 +1,32 @@
+# Build and dependency artifacts
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IDE configurations
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+
+# Python caches and temporary files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Reports, documents, and paper PDFs (Do not commit per instructions)
+*.docx
+*.pdf
+build_d2_reports.py
+DASHBOARD_GUIDE.md
+plan.md
+HELP.md
+
+# Diagram generator scripts and generated diagrams directory (Do not commit per instructions)
+diagrams/
+generate_diagrams.py
